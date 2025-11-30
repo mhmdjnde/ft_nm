@@ -1,0 +1,16 @@
+A: Absolute symbol (value is fixed and not affected by relocation)
+B: Global uninitialized data object (BSS section)
+b: Local (static) uninitialized data object (BSS section)
+D: Global initialized data object (data section)
+d: Local (static) initialized data object (data section)
+R: Global read-only data (e.g. const data, rodata section)
+r: Local (static) read-only data
+T: Global function or code symbol (text section)
+t: Local (static) function or code symbol (text section)
+U: Undefined symbol (referenced but defined in another object or library)
+W: Global weak symbol (can be overridden by a strong definition)
+w: Local weak symbol
+V: Global weak object (weak data symbol)
+v: Local weak object
+N: Debugging symbol (stabs or other debug info, usually not in normal output)
+?: Symbol type unknown or not recognized by nm
