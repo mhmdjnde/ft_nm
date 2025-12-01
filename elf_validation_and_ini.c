@@ -12,26 +12,6 @@
 
 #include "ft_nm.h"
 
-/*
-** init_elf:
-**   - Interprets the mapped file as either an ELF64 or ELF32 header,
-**     based on EI_CLASS (already checked in validate_elf).
-**   - Checks that the full ELF header fits in the file.
-**   - Checks that the section header table (e_shoff, e_shnum, e_shentsize)
-**     is fully contained inside the file.
-**   - Checks that the section header entry size matches the expected
-**     sizeof(Elf64_Shdr) or sizeof(Elf32_Shdr).
-**   - Fills the t_elf structure with:
-**       * addr, size        : base pointer and file size
-**       * is_64             : 1 for ELF64, 0 for ELF32
-**       * section_header_*  : offset, number, entry size
-**       * section_str_index : index of the section name string table
-**   - Returns 1 if everything is OK, 0 on any error (and prints an error).
-*/
-//added by jnde
-//the e_shoff is where the header table is started (offset, usually 0x400)
-//the e_shnum is the number of section entries, how many entries ther eis
-//the e_shentsize is the entry size
 int	init_elf(void *addr, int size, t_elf *elf)
 {
 	char		*e_ident;
@@ -96,16 +76,6 @@ int	init_elf(void *addr, int size, t_elf *elf)
 	return (1);
 }
 
-/*
-** validate_elf:
-**   - Works on the beginning of the mapped file (addr).
-**   - First checks that the file is at least EI_NIDENT (which is 16) bytes long,
-**     so it can contain the ELF identification array e_ident[].
-**   - Then checks the 4 magic bytes (0x7F, 'E', 'L', 'F').
-**   - Then checks that EI_CLASS is either ELFCLASS32 or ELFCLASS64.
-**   - Returns 1 if the file looks like a supported ELF, 0 otherwise
-**     (and prints an appropriate error message).
-*/
 int	validate_elf(void *addr, size_t size)
 {
 	char	*e_ident;

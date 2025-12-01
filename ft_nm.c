@@ -19,6 +19,28 @@
 // ELF header → section header table info (`init_elf`)
 // Section headers → symbol tables + string tables (`find_symbol_tables`)
 
+//full explanation till 6th step of the roadmap
+// What we are doing till now: we take the file path, open it with open and get its file descriptor.
+// After checking that the file exists, we use fstat to get the file size, then mmap to map the file bytes into memory.
+// mmap takes the mapping mode (here: read-only, PROT_READ) and returns an address as a void * that we then treat as a char * to read the raw bytes.
+
+// After a successful mmap, we validate that the file is an ELF file (ELF32 or ELF64) using that address.
+// To do that, we first make sure the file is at least 16 bytes (so it can contain the e_ident array)
+// and that the first 4 bytes match the ELF magic (0x7F, 'E', 'L', 'F').
+
+// Once we know it is a valid ELF file, we initialize the information we need about it: the class (32-bit or 64-bit),
+// the section header offset (e_shoff), the number of section headers (e_shnum), the size of each section header (e_shentsize),
+// and the index of the section-name string table (e_shstrndx).
+
+// After this initialization, we iterate over each section header.
+// We look for section headers whose type is a symbol table (SHT_SYMTAB or SHT_DYNSYM).
+// For each symbol-table section, we read its symbol offset, size, entry size, and the sh_link field, which points to its associated string-table section.
+// Then, using that link, we locate the string-table section header, get its offset and size, and check that all offsets and sizes stay inside the file and that its type is SHT_STRTAB.
+
+// If everything is valid, and the section type is SHT_SYMTAB or SHT_DYNSYM,
+// we store the symbol-table offsets/sizes and the corresponding string-table offsets/sizes into the main t_elf struct,
+// so we can later read the symbols and their names.
+
 int	ft_strlen(char *str)
 {
 	int	i;
@@ -29,21 +51,6 @@ int	ft_strlen(char *str)
 	return (i);
 }
 
-/*
-** map_file:
-**   - Uses fstat(fd, &st) to get the file size in st.st_size.
-**   - Rejects files smaller than 4 bytes (too small for an ELF header).
-**   - Uses mmap to map the whole file into memory:
-**       addr = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-**     * mmap creates a memory mapping of the file contents.
-**     * mmap returns a pointer (addr) that can be treated as a char*
-**       to read the file bytes directly from memory.
-**   - On success:
-**       * stores the file size in *size
-**       * returns addr
-**   - On error (fstat or mmap failure):
-**       * prints an error and returns NULL.
-*/
 void	*map_file(int fd, size_t *size)
 {
 	struct stat	st;
@@ -69,18 +76,6 @@ void	*map_file(int fd, size_t *size)
 	return (addr);
 }
 
-/*
-** check_files:
-**   - Takes a NULL-terminated array of filenames (files).
-**   - Counts how many filenames there are.
-**   - Allocates an int array of size (len + 1) to store file descriptors.
-**   - For each filename:
-**       * tries to open it read-only with open(name, O_RDONLY)
-**       * on failure: prints "nm: '<name>': No such file"
-**       * on success: stores the file descriptor in the fds array
-**   - Terminates the array with -1 as a sentinel.
-**   - Returns the allocated fds array (or NULL if malloc fails).
-*/
 int	*check_files(char **files)
 {
 	int	files_i;
@@ -117,35 +112,15 @@ int	*check_files(char **files)
 	return (fds);
 }
 
-/*
-** main:
-**   - Checks that at least one filename is provided on the command line.
-**   - Uses check_files(&argv[1]) to open all requested files and collect
-**     valid file descriptors in a NULL-terminated int array (ending with -1).
-**   - For each valid file descriptor:
-**       1) map_file(fd, &size):
-**          * fstat + mmap the whole file in read-only memory
-**          * returns addr (base pointer) and size (file size in bytes)
-**       2) validate_elf(addr, size):
-**          * check ELF magic and class (ELF32 / ELF64)
-**       3) init_elf(addr, (int)size, &elf):
-**          * interpret ELF header as 32 or 64-bit
-**          * validate section header table
-**          * store key info in the t_elf struct
-**       4) later, you will use the t_elf information to locate sections,
-**          symbol tables, string tables, and finally print symbols.
-**       5) munmap(addr, size) releases the mapping created by mmap.
-**          After munmap, addr must not be used anymore.
-**       6) close(fd) closes the file descriptor.
-**   - Finally frees the fds array and returns 0.
-*/
 int	main(int argc, char **argv)
 {
-	int		*fds;
-	int		i;
-	void	*addr;
-	size_t	size;
-	t_elf	elf;
+	int			*fds;
+	int			i;
+	void		*addr;
+	size_t		size;
+	t_elf		elf;
+	t_symbol	*symbols;
+	int			symbol_count;
 
 	if (argc < 2)
 	{
@@ -167,10 +142,16 @@ int	main(int argc, char **argv)
 				{
 					if (find_symbol_tables(&elf))
 					{
-						/* later:
-						**   use elf.symtab_* and elf.dynsym_*
-						**   to loop over symbols and print them like nm
-						*/
+						if (extract_symbols(&elf, &symbols, &symbol_count))
+						{
+							/*
+							** later:
+							**   - use symbols[] and symbol_count to
+							**     compute the type letter (T, U, etc.)
+							**     and sort/print them like nm.
+							*/
+							free(symbols);
+						}
 					}
 				}
 			}
@@ -182,4 +163,5 @@ int	main(int argc, char **argv)
 	free(fds);
 	return (0);
 }
+
 

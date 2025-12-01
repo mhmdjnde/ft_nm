@@ -12,28 +12,6 @@
 
 #include "ft_nm.h"
 
-/*
-** find_symbol_tables:
-**   - Walks the section header table described by t_elf.
-**   - Looks for sections of type SHT_SYMTAB (regular symbols)
-**     and SHT_DYNSYM (dynamic symbols).
-**   - For each symbol table:
-**       * checks that the table (sh_offset, sh_size) is inside the file.
-**       * checks that sh_entsize matches the expected symbol entry size
-**         (Elf64_Sym or Elf32_Sym).
-**       * uses sh_link to locate the associated string table section
-**         (must be of type SHT_STRTAB).
-**       * checks that the string table (sh_offset, sh_size) is inside the file.
-**   - Stores the offsets/sizes in the t_elf structure:
-**       * symtab_*  for SHT_SYMTAB
-**       * dynsym_*  for SHT_DYNSYM
-**   - Returns 1 if at least one valid symbol table is found,
-**     0 otherwise (and prints an error if nothing usable is found).
-*/
-//added by jnde
-//sh_type is the section header type, here in this project
-//we need to read the symbol table, so we need the SHT_SYMTAB and the SHT_DYNSYM
-// and SHT_STRTAB that contains the symbol names
 int	find_symbol_tables(t_elf *elf)
 {
 	char	*base;
