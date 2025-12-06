@@ -1,9 +1,9 @@
 /* ************************************************/
 /*                                                */
 /*                                                */
-/*   ft_nm.c                                      */
+/*   find_symbol_tables.c                         */
 /*                                                */
-/*   By: JndeFromHome <jnde@student.jnde.fr>      */
+/*   By: JndeFromHome                             */
 /*                                                */
 /*   Created: 2025/11/30 23:33:56 by JndeFromHome */
 /*   Updated: 2029/11/99 23:33:56 by JndeFromHome */

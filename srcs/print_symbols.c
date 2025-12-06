@@ -1,0 +1,208 @@
+#include "ft_nm.h"
+
+/*
+** nm_strcmp:
+**   - Simple lexicographical comparison of two C strings.
+**   - Returns < 0 if s1 < s2, > 0 if s1 > s2, 0 if equal.
+**   - Used to sort symbols by name like nm does.
+*/
+static int	nm_strcmp(char *s1, char *s2)
+{
+	int	i;
+
+	i = 0;
+	while (s1[i] && s2[i] && s1[i] == s2[i])
+		i++;
+	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
+}
+
+/*
+** put_hex_padded:
+**   - Prints an unsigned long value in lowercase hex, padded to 'width'
+**     characters with leading zeros (no "0x" prefix).
+**   - Uses only write() and a local buffer.
+*/
+static void	put_hex_padded(unsigned long value, int width)
+{
+	char	buf[16];
+	int		i;
+
+	if (width > 16)
+		width = 16;
+	i = width - 1;
+	while (i >= 0)
+	{
+		buf[i] = "0123456789abcdef"[value & 0xF];
+		value >>= 4;
+		i--;
+	}
+	write(1, buf, width);
+}
+
+/*
+** get_symbol_letter:
+**   - Computes the nm type letter (T, t, B, b, D, d, R, r, U, etc.)
+**     for one symbol, based on:
+**       * symbol binding (local/global/weak)
+**       * symbol type (function, object, etc.)
+**       * symbol section index (undefined, abs, common, or a real section)
+**       * section header flags (SHF_ALLOC, SHF_WRITE, SHF_EXECINSTR)
+**   - Returns '?' if something looks inconsistent.
+*/
+static char	get_symbol_letter(t_elf *elf, t_symbol *sym)
+{
+	unsigned char	bind;
+	unsigned char	type;
+	unsigned short	shndx;
+	unsigned long	sh_type;
+	unsigned long	sh_flags;
+	char			c;
+	char			*base;
+
+	bind = sym->bind;
+	type = sym->type;
+	shndx = sym->section_index;
+	/* Undefined / absolute / common handled first */
+	if (shndx == SHN_UNDEF)
+	{
+		if (bind == STB_WEAK)
+		{
+			if (type == STT_OBJECT)
+				c = 'v';
+			else
+				c = 'w';
+		}
+		else
+			c = 'u';
+	}
+	else if (shndx == SHN_ABS)
+		c = 'a';
+	else if (shndx == SHN_COMMON)
+		c = 'c';
+	else
+	{
+		/* Normal section: look at section header type + flags */
+		if (shndx >= elf->section_header_num)
+			return ('?');
+		base = (char *)elf->addr;
+		if (elf->is_64)
+		{
+			Elf64_Shdr	*sh;
+
+			sh = (Elf64_Shdr *)(base + elf->section_header_offset
+					+ shndx * elf->section_header_size);
+			sh_type = sh->sh_type;
+			sh_flags = sh->sh_flags;
+		}
+		else
+		{
+			Elf32_Shdr	*sh;
+
+			sh = (Elf32_Shdr *)(base + elf->section_header_offset
+					+ shndx * elf->section_header_size);
+			sh_type = sh->sh_type;
+			sh_flags = sh->sh_flags;
+		}
+		if (sh_type == SHT_NOBITS
+			&& (sh_flags & SHF_ALLOC) && (sh_flags & SHF_WRITE))
+			c = 'b';
+		else if (sh_type == SHT_PROGBITS
+			&& (sh_flags & SHF_ALLOC) && (sh_flags & SHF_EXECINSTR))
+			c = 't';
+		else if (sh_type == SHT_PROGBITS
+			&& (sh_flags & SHF_ALLOC) && (sh_flags & SHF_WRITE))
+			c = 'd';
+		else if (sh_type == SHT_PROGBITS
+			&& (sh_flags & SHF_ALLOC) && !(sh_flags & SHF_WRITE))
+			c = 'r';
+		else if (sh_type == SHT_DYNAMIC)
+			c = 'd';
+		else
+			c = 't';
+		/* Weak defined symbols: override with w/v style */
+		if (bind == STB_WEAK)
+		{
+			if (type == STT_OBJECT)
+				c = 'v';
+			else
+				c = 'w';
+		}
+	}
+	/* Global / weak → uppercase, local → lowercase */
+	if (bind == STB_GLOBAL || bind == STB_WEAK)
+	{
+		if (c >= 'a' && c <= 'z')
+			c = c - 'a' + 'A';
+	}
+	return (c);
+}
+
+/*
+** sort_and_print_symbols:
+**   - Input: array of symbols (already extracted) and their count.
+**   - Step 1: sort the symbols by name (lexicographically, like nm).
+**   - Step 2: for each symbol:
+**       * compute the type letter with get_symbol_letter()
+**       * print:
+**           [address or spaces] [type] [name]\n
+**         address:
+**           - hex, padded to 16 chars for 64-bit, 8 for 32-bit
+**           - spaces if the symbol is undefined (SHN_UNDEF)
+*/
+void	sort_and_print_symbols(t_elf *elf, t_symbol *symbols, int count)
+{
+	int			i;
+	int			j;
+	int			min;
+	t_symbol	tmp;
+	char		c;
+	int			width;
+
+	/* sort by name using a simple selection sort */
+	i = 0;
+	while (i < count - 1)
+	{
+		min = i;
+		j = i + 1;
+		while (j < count)
+		{
+			if (nm_strcmp(symbols[j].name, symbols[min].name) < 0)
+				min = j;
+			j++;
+		}
+		if (min != i)
+		{
+			tmp = symbols[i];
+			symbols[i] = symbols[min];
+			symbols[min] = tmp;
+		}
+		i++;
+	}
+	/* print all symbols */
+	width = 8;
+	if (elf->is_64)
+		width = 16;
+	i = 0;
+	while (i < count)
+	{
+		c = get_symbol_letter(elf, &symbols[i]);
+		if (symbols[i].section_index == SHN_UNDEF)
+		{
+			/* undefined: pad with spaces instead of address */
+			j = 0;
+			while (j < width)
+			{
+				write(1, " ", 1);
+				j++;
+			}
+		}
+		else
+			put_hex_padded(symbols[i].value, width);
+		write(1, " ", 1);
+		write(1, &c, 1);
+		write(1, " ", 1);
+		write(1, symbols[i].name, ft_strlen(symbols[i].name));
+		write(1, "\n", 1);
+		i++;
+	}
+}

@@ -3,7 +3,7 @@ NAME    = ft_nm
 CC      = cc
 CFLAGS  = -Wall -Wextra -Werror -g
 
-SRC     = ft_nm.c elf_validation_and_ini.c find_symbol_tables.c
+SRC     = srcs/ft_nm.c srcs/elf_validation_and_ini.c srcs/find_symbol_tables.c srcs/symbol_type.c srcs/print_symbols.c srcs/extract_symbols.c
 OBJ     = $(SRC:.c=.o)
 
 all: $(NAME)

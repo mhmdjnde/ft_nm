@@ -1,9 +1,9 @@
 /* ************************************************/
 /*                                                */
 /*                                                */
-/*   extract_symbols.c                             */
+/*   extract_symbols.c                            */
 /*                                                */
-/*   By: JndeFromHome <jnde@student.jnde.fr>      */
+/*   By: JndeFromHome                             */
 /*                                                */
 /*   Created: 2025/12/01 00:00:00 by JndeFromHome */
 /*   Updated: 2025/12/01 00:00:00 by JndeFromHome */
