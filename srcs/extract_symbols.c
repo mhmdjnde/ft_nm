@@ -3,7 +3,7 @@
 /*                                                */
 /*   extract_symbols.c                            */
 /*                                                */
-/*   By: JndeFromHome                             */
+/*   By: JndeFromHome <jnde@student.jnde.fr>      */
 /*                                                */
 /*   Created: 2025/12/01 00:00:00 by JndeFromHome */
 /*   Updated: 2025/12/01 00:00:00 by JndeFromHome */
@@ -66,7 +66,7 @@ int	extract_symbols(t_elf *elf, t_symbol **symbols, int *count)
 					char	*name;
 
 					name = base + str_off + name_index;
-					if (*name)
+					if (*name && ELF64_ST_TYPE(sym64->st_info) != STT_FILE)
 					{
 						arr[idx].name = name;
 						arr[idx].value = (unsigned long)sym64->st_value;
@@ -90,7 +90,7 @@ int	extract_symbols(t_elf *elf, t_symbol **symbols, int *count)
 					char	*name;
 
 					name = base + str_off + name_index;
-					if (*name)
+					if (*name && ELF32_ST_TYPE(sym32->st_info) != STT_FILE)
 					{
 						arr[idx].name = name;
 						arr[idx].value = (unsigned long)sym32->st_value;
@@ -134,7 +134,7 @@ int	extract_symbols(t_elf *elf, t_symbol **symbols, int *count)
 					char	*name;
 
 					name = base + str_off + name_index;
-					if (*name)
+					if (*name && ELF64_ST_TYPE(sym64->st_info) != STT_FILE)
 					{
 						arr[idx].name = name;
 						arr[idx].value = (unsigned long)sym64->st_value;
@@ -158,7 +158,7 @@ int	extract_symbols(t_elf *elf, t_symbol **symbols, int *count)
 					char	*name;
 
 					name = base + str_off + name_index;
-					if (*name)
+					if (*name && ELF32_ST_TYPE(sym32->st_info) != STT_FILE)
 					{
 						arr[idx].name = name;
 						arr[idx].value = (unsigned long)sym32->st_value;

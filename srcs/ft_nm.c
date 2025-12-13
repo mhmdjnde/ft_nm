@@ -139,7 +139,6 @@ int	main(int argc, char **argv)
 	t_elf		elf;
 	t_symbol	*symbols;
 	int			symbol_count;
-	char		*types;
 
 	if (argc < 2)
 	{
@@ -160,17 +159,8 @@ int	main(int argc, char **argv)
 				if (find_symbol_tables(&elf)
 					&& extract_symbols(&elf, &symbols, &symbol_count))
 				{
-					types = (char *)malloc(symbol_count * sizeof(char));
-					if (!types)
-					{
-						free(symbols);
-					}
-					else
-					{
-						compute_symbol_types(&elf, symbols, symbol_count, types);
-						free(types);
-						free(symbols);
-					}
+					sort_and_print_symbols(&elf, symbols, symbol_count);
+					free(symbols);
 				}
 			}
 			munmap(addr, size);
@@ -181,3 +171,4 @@ int	main(int argc, char **argv)
 	free(fds);
 	return (0);
 }
+

@@ -1,12 +1,18 @@
+/* ************************************************/
+/*                                                */
+/*                                                */
+/*   print_symbols.c                              */
+/*                                                */
+/*   By: JndeFromHome                             */
+/*                                                */
+/*   Created: 2025/11/30 23:33:56 by JndeFromHome */
+/*   Updated: 2029/11/99 23:33:56 by JndeFromHome */
+/*                                                */
+/* ************************************************/
+
 #include "ft_nm.h"
 
-/*
-** nm_strcmp:
-**   - Simple lexicographical comparison of two C strings.
-**   - Returns < 0 if s1 < s2, > 0 if s1 > s2, 0 if equal.
-**   - Used to sort symbols by name like nm does.
-*/
-static int	nm_strcmp(char *s1, char *s2)
+int	ft_strcmp(char *s1, char *s2)
 {
 	int	i;
 
@@ -16,13 +22,7 @@ static int	nm_strcmp(char *s1, char *s2)
 	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
 }
 
-/*
-** put_hex_padded:
-**   - Prints an unsigned long value in lowercase hex, padded to 'width'
-**     characters with leading zeros (no "0x" prefix).
-**   - Uses only write() and a local buffer.
-*/
-static void	put_hex_padded(unsigned long value, int width)
+void	put_hex_padded(unsigned long value, int width)
 {
 	char	buf[16];
 	int		i;
@@ -32,24 +32,14 @@ static void	put_hex_padded(unsigned long value, int width)
 	i = width - 1;
 	while (i >= 0)
 	{
-		buf[i] = "0123456789abcdef"[value & 0xF];
-		value >>= 4;
+		buf[i] = "0123456789abcdef"[value % 16];
+		value = value / 16;
 		i--;
 	}
 	write(1, buf, width);
 }
 
-/*
-** get_symbol_letter:
-**   - Computes the nm type letter (T, t, B, b, D, d, R, r, U, etc.)
-**     for one symbol, based on:
-**       * symbol binding (local/global/weak)
-**       * symbol type (function, object, etc.)
-**       * symbol section index (undefined, abs, common, or a real section)
-**       * section header flags (SHF_ALLOC, SHF_WRITE, SHF_EXECINSTR)
-**   - Returns '?' if something looks inconsistent.
-*/
-static char	get_symbol_letter(t_elf *elf, t_symbol *sym)
+char	get_symbol_letter(t_elf *elf, t_symbol *sym)
 {
 	unsigned char	bind;
 	unsigned char	type;
@@ -62,7 +52,6 @@ static char	get_symbol_letter(t_elf *elf, t_symbol *sym)
 	bind = sym->bind;
 	type = sym->type;
 	shndx = sym->section_index;
-	/* Undefined / absolute / common handled first */
 	if (shndx == SHN_UNDEF)
 	{
 		if (bind == STB_WEAK)
@@ -81,7 +70,6 @@ static char	get_symbol_letter(t_elf *elf, t_symbol *sym)
 		c = 'c';
 	else
 	{
-		/* Normal section: look at section header type + flags */
 		if (shndx >= elf->section_header_num)
 			return ('?');
 		base = (char *)elf->addr;
@@ -119,7 +107,6 @@ static char	get_symbol_letter(t_elf *elf, t_symbol *sym)
 			c = 'd';
 		else
 			c = 't';
-		/* Weak defined symbols: override with w/v style */
 		if (bind == STB_WEAK)
 		{
 			if (type == STT_OBJECT)
@@ -128,7 +115,6 @@ static char	get_symbol_letter(t_elf *elf, t_symbol *sym)
 				c = 'w';
 		}
 	}
-	/* Global / weak → uppercase, local → lowercase */
 	if (bind == STB_GLOBAL || bind == STB_WEAK)
 	{
 		if (c >= 'a' && c <= 'z')
@@ -137,18 +123,6 @@ static char	get_symbol_letter(t_elf *elf, t_symbol *sym)
 	return (c);
 }
 
-/*
-** sort_and_print_symbols:
-**   - Input: array of symbols (already extracted) and their count.
-**   - Step 1: sort the symbols by name (lexicographically, like nm).
-**   - Step 2: for each symbol:
-**       * compute the type letter with get_symbol_letter()
-**       * print:
-**           [address or spaces] [type] [name]\n
-**         address:
-**           - hex, padded to 16 chars for 64-bit, 8 for 32-bit
-**           - spaces if the symbol is undefined (SHN_UNDEF)
-*/
 void	sort_and_print_symbols(t_elf *elf, t_symbol *symbols, int count)
 {
 	int			i;
@@ -158,7 +132,6 @@ void	sort_and_print_symbols(t_elf *elf, t_symbol *symbols, int count)
 	char		c;
 	int			width;
 
-	/* sort by name using a simple selection sort */
 	i = 0;
 	while (i < count - 1)
 	{
@@ -166,7 +139,7 @@ void	sort_and_print_symbols(t_elf *elf, t_symbol *symbols, int count)
 		j = i + 1;
 		while (j < count)
 		{
-			if (nm_strcmp(symbols[j].name, symbols[min].name) < 0)
+			if (ft_strcmp(symbols[j].name, symbols[min].name) < 0)
 				min = j;
 			j++;
 		}
@@ -178,7 +151,6 @@ void	sort_and_print_symbols(t_elf *elf, t_symbol *symbols, int count)
 		}
 		i++;
 	}
-	/* print all symbols */
 	width = 8;
 	if (elf->is_64)
 		width = 16;
@@ -188,7 +160,6 @@ void	sort_and_print_symbols(t_elf *elf, t_symbol *symbols, int count)
 		c = get_symbol_letter(elf, &symbols[i]);
 		if (symbols[i].section_index == SHN_UNDEF)
 		{
-			/* undefined: pad with spaces instead of address */
 			j = 0;
 			while (j < width)
 			{

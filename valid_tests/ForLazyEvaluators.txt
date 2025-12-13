@@ -1,0 +1,103 @@
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test1_basic.o
+0000000000000000 T add
+0000000000000000 D g1
+0000000000000004 d s1
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test1_basic.o
+0000000000000000 T add
+0000000000000000 D g1
+0000000000000004 d s1
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test2_bss.o
+0000000000000000 T bump
+0000000000000000 B g_uninit
+0000000000000004 b s_uninit
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test2_bss.o
+0000000000000000 T bump
+0000000000000000 B g_uninit
+0000000000000004 b s_uninit
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test3_rodata.o
+000000000000000c R ci
+0000000000000000 T get_ci
+0000000000000000 D message
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test3_rodata.o
+000000000000000c R ci
+0000000000000000 T get_ci
+0000000000000000 D message
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test4_static_funcs.o
+0000000000000000 t helper
+0000000000000012 T public_api
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test4_static_funcs.o
+0000000000000000 t helper
+0000000000000012 T public_api
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test5_weak.o
+0000000000000000 D normal_var
+0000000000000000 T use_weak
+0000000000000000 V weak_var
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test5_weak.o
+0000000000000000 D normal_var
+0000000000000000 T use_weak
+0000000000000000 V weak_var
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test6_extern.o
+                 U external_symbol
+0000000000000000 T use_external
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test6_extern.o
+                 U external_symbol
+0000000000000000 T use_external
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test7_multiple.o
+0000000000000000 D a
+0000000000000004 D b
+0000000000000000 T sum_all
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test7_multiple.o
+0000000000000000 D a
+0000000000000004 D b
+0000000000000000 T sum_all
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test8_struct.o
+0000000000000000 T make_point
+0000000000000000 B origin
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test8_struct.o
+0000000000000000 T make_point
+0000000000000000 B origin
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test9_static_data.o
+0000000000000000 T get_table
+0000000000000000 d table
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test9_static_data.o
+0000000000000000 T get_table
+0000000000000000 d table
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ nm test10_funcptr.o
+0000000000000016 T call_fp
+0000000000000000 D fp
+0000000000000000 T target
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$ ../ft_nm test10_funcptr.o
+0000000000000016 T call_fp
+0000000000000000 D fp
+0000000000000000 T target
+
+
+jnde1777@110076-JOUNDI:/mnt/c/Users/mhmdj/OneDrive/Desktop/nm/ft_nm/valid_tests$
