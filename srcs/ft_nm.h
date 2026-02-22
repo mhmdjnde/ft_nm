@@ -59,5 +59,8 @@ void	compute_symbol_types(t_elf *elf, t_symbol *symbols, int count, char *types)
 int		extract_symbols(t_elf *elf, t_symbol **symbols, int *count);
 void	sort_and_print_symbols(t_elf *elf, t_symbol *symbols, int count);
 int		ft_strlen(char *str);
+void	sort_symbols(t_symbol *symbols, int count);
+void	print_symbols(t_elf *elf, t_symbol *symbols, int count);
+
 
 #endif

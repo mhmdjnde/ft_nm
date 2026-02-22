@@ -118,12 +118,11 @@ int	*check_files(char **files)
 			write(2, "nm: '", 5);
 			write(2, files[files_i], ft_strlen(files[files_i]));
 			write(2, "': No such file\n", 16);
+			fds[fds_i] = -2;
 		}
 		else
-		{
 			fds[fds_i] = fd;
-			fds_i++;
-		}
+		fds_i++;
 		files_i++;
 	}
 	fds[fds_i] = -1;
@@ -132,26 +131,97 @@ int	*check_files(char **files)
 
 int	main(int argc, char **argv)
 {
-	int			*fds;
 	int			i;
+	int			j;
+	int			k;
+	int			first_file;
+	int			file_count;
+	int			show_header;
+	int			printed;
+	int			fd;
 	void		*addr;
 	size_t		size;
 	t_elf		elf;
 	t_symbol	*symbols;
 	int			symbol_count;
+	int			opt_a;
+	int			opt_g;
+	int			opt_u;
+	int			opt_r;
+	int			opt_p;
+	int			keep;
 
-	if (argc < 2)
+	first_file = 1;
+	opt_a = 0;
+	opt_g = 0;
+	opt_u = 0;
+	opt_r = 0;
+	opt_p = 0;
+	while (first_file < argc && argv[first_file][0] == '-' && argv[first_file][1])
 	{
-		write(2, "Usage: ./ft_nm <file> [file...]\n", 32);
-		return (1);
+		if (argv[first_file][1] == '-' && argv[first_file][2] == '\0')
+		{
+			first_file++;
+			break ;
+		}
+		j = 1;
+		while (argv[first_file][j])
+		{
+			if (argv[first_file][j] == 'a')
+				opt_a = 1;
+			else if (argv[first_file][j] == 'g')
+				opt_g = 1;
+			else if (argv[first_file][j] == 'u')
+				opt_u = 1;
+			else if (argv[first_file][j] == 'r')
+				opt_r = 1;
+			else if (argv[first_file][j] == 'p')
+				opt_p = 1;
+			else
+			{
+				write(2, "ft_nm: invalid option -- '", 26);
+				write(2, &argv[first_file][j], 1);
+				write(2, "'\n", 2);
+				return (1);
+			}
+			j++;
+		}
+		first_file++;
 	}
-	fds = check_files(&argv[1]);
-	if (!fds)
-		return (1);
-	i = 0;
-	while (fds[i] != -1)
+	if (first_file >= argc)
 	{
-		addr = map_file(fds[i], &size);
+		argv[0] = "a.out";
+		first_file = 0;
+		argc = 1;
+	}
+	file_count = argc - first_file;
+	show_header = (file_count > 1);
+	i = first_file;
+	printed = 0;
+	while (i < argc)
+	{
+		fd = open(argv[i], O_RDONLY);
+		if (fd < 0)
+		{
+			if (first_file == 0)
+			{
+				write(2, "ft_nm: 'a.out': No such file\n", 29);
+				return (1);
+			}
+			write(2, "nm: '", 5);
+			write(2, argv[i], ft_strlen(argv[i]));
+			write(2, "': No such file\n", 16);
+			i++;
+			continue ;
+		}
+		if (show_header)
+		{
+			if (printed)
+				write(1, "\n", 1);
+			write(1, argv[i], ft_strlen(argv[i]));
+			write(1, ":\n", 2);
+		}
+		addr = map_file(fd, &size);
 		if (addr != NULL)
 		{
 			if (validate_elf(addr, size) && init_elf(addr, (int)size, &elf))
@@ -159,16 +229,56 @@ int	main(int argc, char **argv)
 				if (find_symbol_tables(&elf)
 					&& extract_symbols(&elf, &symbols, &symbol_count))
 				{
-					sort_and_print_symbols(&elf, symbols, symbol_count);
+					k = 0;
+					j = 0;
+					while (j < symbol_count)
+					{
+						keep = 1;
+						if (!opt_a && symbols[j].type == STT_FILE)
+							keep = 0;
+						if (opt_u && symbols[j].section_index != SHN_UNDEF)
+							keep = 0;
+						if (opt_g && !(symbols[j].bind == STB_GLOBAL
+								|| symbols[j].bind == STB_WEAK
+								|| symbols[j].bind == STB_GNU_UNIQUE))
+							keep = 0;
+						if (keep)
+						{
+							symbols[k] = symbols[j];
+							k++;
+						}
+						j++;
+					}
+					symbol_count = k;
+					if (symbol_count > 0)
+					{
+						if (!opt_p)
+							sort_symbols(symbols, symbol_count);
+						if (opt_r)
+						{
+							j = 0;
+							k = symbol_count - 1;
+							while (j < k)
+							{
+								t_symbol	tmp;
+
+								tmp = symbols[j];
+								symbols[j] = symbols[k];
+								symbols[k] = tmp;
+								j++;
+								k--;
+							}
+						}
+						print_symbols(&elf, symbols, symbol_count);
+					}
 					free(symbols);
+					printed = 1;
 				}
 			}
 			munmap(addr, size);
 		}
-		close(fds[i]);
+		close(fd);
 		i++;
 	}
-	free(fds);
 	return (0);
 }
-

@@ -78,3 +78,34 @@ Sure, here’s a **10-step roadmap** from zero to finished `ft_nm` (no code, jus
 * Add **bounds checks everywhere**: any offset or pointer derived from the file must stay inside `[file_start, file_start + file_size)`. Never trust the file.
 * Compare your output with `/usr/bin/nm` on many binaries (executables, `.o`, `.so`, corrupted files).
 * Only when this is solid, consider implementing bonus options (`-a`, `-g`, `-u`, `-r`, `-p`) by filtering and changing the sorting/printing logic.
+
+
+//bonus
+
+### Bonus roadmap — 4 steps
+
+1. **Parse options (`-a -g -u -r -p`)**
+
+   * Scan argv from the start.
+   * Collect flags into a small struct (booleans).
+   * Stop parsing when you hit the first filename.
+   * If an unknown flag appears, print an nm-like error and exit.
+
+2. **Apply symbol filters before printing**
+
+   * `-u`: keep only undefined (`section_index == SHN_UNDEF`).
+   * `-g`: keep only external/global (and weak, like nm does).
+   * `-a`: include symbols you normally skip (match nm: more “special/internal” symbols that you currently ignore).
+
+3. **Implement ordering modes**
+
+   * Default: your current name sort.
+   * `-p`: don’t sort (preserve extraction order).
+   * `-r`: reverse the final order (works with both sorted and `-p`).
+
+4. **Test vs real `nm` with a small matrix**
+
+   * Try: single file, multiple files, missing files, stripped binaries, `.o`, `.so`.
+   * Try flag combos: `-g`, `-u`, `-p`, `-r`, `-gu`, `-pr`, `-gpr`, etc.
+   * Diff outputs and adjust edge-cases (especially what `-a` includes, and `-g` bind rules).
+
