@@ -1,0 +1,9 @@
+# the compiled binary and the object files, rebuilt by `make`
+ft_nm
+srcs/*.o
+
+# generated on demand by invalid_tests/Makefile
+invalid_tests/*.o
+
+# note: valid_tests/*.o stay tracked on purpose, they are the fixtures the
+# outputs in valid_tests/ForLazyEvaluators.txt were taken from

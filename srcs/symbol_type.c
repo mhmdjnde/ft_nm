@@ -12,92 +12,84 @@
 
 #include "ft_nm.h"
 
-void	compute_symbol_types(t_elf *elf, t_symbol *symbols, int count, char *types)
+int	starts_with(char *str, char *prefix)
 {
-	int		i;
-	char	*base;
+	int	i;
 
-	base = (char *)elf->addr;
+	if (!str)
+		return (0);
 	i = 0;
-	while (i < count)
+	while (prefix[i])
 	{
-		t_symbol		*sym;
-		unsigned short	sec_index;
-		char			c;
-
-		sym = &symbols[i];
-		sec_index = sym->section_index;
-		c = '?';
-		if (sym->bind == STB_WEAK)
-		{
-			if (sec_index == SHN_UNDEF)
-			{
-				if (sym->type == STT_OBJECT)
-					c = 'v';
-				else
-					c = 'w';
-			}
-			else
-			{
-				if (sym->type == STT_OBJECT)
-					c = 'V';
-				else
-					c = 'W';
-			}
-		}
-		else if (sec_index == SHN_UNDEF)
-			c = 'U';
-		else if (sec_index == SHN_ABS)
-			c = 'A';
-		else if (sec_index == SHN_COMMON)
-			c = 'C';
-		else if (sec_index >= (unsigned short)elf->section_header_num)
-			c = '?';
-		else
-		{
-			int				hdr_off;
-			unsigned long	flags;
-			unsigned int	stype;
-
-			hdr_off = elf->section_header_offset
-				+ sec_index * elf->section_header_size;
-			if (hdr_off < 0
-				|| hdr_off + elf->section_header_size > elf->size)
-				c = '?';
-			else
-			{
-				if (elf->is_64)
-				{
-					Elf64_Shdr	*sh;
-
-					sh = (Elf64_Shdr *)(base + hdr_off);
-					flags = sh->sh_flags;
-					stype = sh->sh_type;
-				}
-				else
-				{
-					Elf32_Shdr	*sh;
-
-					sh = (Elf32_Shdr *)(base + hdr_off);
-					flags = sh->sh_flags;
-					stype = sh->sh_type;
-				}
-				if (stype == SHT_NOBITS
-					&& (flags & SHF_ALLOC) && (flags & SHF_WRITE))
-					c = 'B';
-				else if ((flags & SHF_ALLOC) && (flags & SHF_EXECINSTR))
-					c = 'T';
-				else if ((flags & SHF_ALLOC) && (flags & SHF_WRITE))
-					c = 'D';
-				else if (flags & SHF_ALLOC)
-					c = 'R';
-				else
-					c = '?';
-			}
-		}
-		if (sym->bind == STB_LOCAL && c >= 'A' && c <= 'Z')
-			c = (char)(c - 'A' + 'a');
-		types[i] = c;
+		if (str[i] != prefix[i])
+			return (0);
 		i++;
 	}
+	return (1);
+}
+
+int	is_debug_section(t_shdr *sh)
+{
+	return (starts_with(sh->name, ".debug")
+		|| starts_with(sh->name, ".zdebug")
+		|| starts_with(sh->name, ".stab")
+		|| starts_with(sh->name, ".gnu.linkonce.wi."));
+}
+
+char	decode_section_type(t_shdr *sh)
+{
+	int	has_contents;
+	int	is_read_only;
+
+	has_contents = (sh->type != SHT_NOBITS);
+	is_read_only = ((sh->flags & SHF_WRITE) == 0);
+	if (sh->flags & SHF_EXECINSTR)
+		return ('t');
+	if ((sh->flags & SHF_ALLOC) && has_contents)
+	{
+		if (is_read_only)
+			return ('r');
+		return ('d');
+	}
+	if (!has_contents)
+		return ('b');
+	if (is_debug_section(sh))
+		return ('N');
+	if (is_read_only)
+		return ('n');
+	return ('?');
+}
+
+char	get_symbol_letter(t_elf *elf, t_symbol *sym)
+{
+	t_shdr	sh;
+	char	c;
+
+	if (sym->section_index == SHN_COMMON)
+		return ('C');
+	if (sym->section_index == SHN_UNDEF)
+	{
+		if (sym->bind == STB_WEAK && sym->type == STT_OBJECT)
+			return ('v');
+		if (sym->bind == STB_WEAK)
+			return ('w');
+		return ('U');
+	}
+	if (sym->type == STT_GNU_IFUNC)
+		return ('i');
+	if (sym->bind == STB_WEAK && sym->type == STT_OBJECT)
+		return ('V');
+	if (sym->bind == STB_WEAK)
+		return ('W');
+	if (sym->bind == STB_GNU_UNIQUE)
+		return ('u');
+	if (sym->section_index == SHN_ABS)
+		c = 'a';
+	else if (!read_section_header(elf, (int)sym->section_index, &sh))
+		return ('?');
+	else
+		c = decode_section_type(&sh);
+	if (sym->bind == STB_GLOBAL && c >= 'a' && c <= 'z')
+		c = (char)(c - 'a' + 'A');
+	return (c);
 }
