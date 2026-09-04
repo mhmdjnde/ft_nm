@@ -1,5 +1,5 @@
 CC      = cc
-CFLAGS  = -Wall -Wextra -Werror -g
+CFLAGS  = -Wall -Wextra -Werror -g -Wno-address
 
 SRCS    = test1_basic.c \
           test2_bss.c \
